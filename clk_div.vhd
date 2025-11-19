@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity clock_1hz is
+entity clk_div is
     generic (
         DIVISOR : natural := 50_000_000  -- ajuste conforme o clock de entrada
     );
@@ -12,7 +12,7 @@ entity clock_1hz is
     );
 end entity;
 
-architecture rtl of clock_1hz is
+architecture rtl of clk_div is
     signal count   : unsigned(31 downto 0) := (others => '0');
     signal clk_reg : std_logic := '0';
 begin
