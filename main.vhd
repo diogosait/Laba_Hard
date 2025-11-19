@@ -1,68 +1,74 @@
+-- main.vhd
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
-entity tb_main is
+entity main is
+    port (
+        CLOCK_50 : in  std_logic;
+        SW       : in  std_logic_vector(9 downto 0);
+        LEDR     : out std_logic_vector(9 downto 0);
+        HEX3     : out std_logic_vector(7 downto 0);
+        HEX2     : out std_logic_vector(7 downto 0)
+    );
 end entity;
 
-architecture sim of tb_main is
-
-    signal clock         : std_logic := '0';
-    signal reset         : std_logic := '0';
-    signal input_s       : std_logic_vector(7 downto 0) := (others => '0');
-    signal input_display : std_logic_vector(7 downto 0);
-    signal trava1        : std_logic;
-    signal display1      : std_logic_vector(7 downto 0);
-    signal display2      : std_logic_vector(7 downto 0);
+architecture structural of main is
+    signal clk_1hz    : std_logic;
+    signal segundos_s : std_logic_vector(7 downto 0);
+    signal trava_s    : std_logic;
 
 begin
+    ---------------------------------------------------------------------
+    -- Espelhar os switches nos LEDs para visualização
+    ---------------------------------------------------------------------
+    LEDR(7 downto 0) <= SW(7 downto 0);  -- senha nas chaves
+    LEDR(8)          <= '0';             -- não usado
+    LEDR(9)          <= trava_s;         -- LED de trava (1=travado)
 
-    -- DUT: main
-    dut: entity work.main(rtl)
+    ---------------------------------------------------------------------
+    -- Divisor de clock 50 MHz -> 1 Hz
+    ---------------------------------------------------------------------
+    clk_div_inst : entity work.clk_div(behavioral)
+        generic map (
+            DIVISOR => 50_000_000
+        )
         port map (
-            clock         => clock,
-            reset         => reset,
-            input         => input_s,
-            input_display => input_display,
-            trava1        => trava1,
-            display1      => display1,
-            display2      => display2
+            clk_in  => CLOCK_50,
+            reset   => SW(9),        -- mesmo reset da trava
+            clk_out => clk_1hz
         );
 
-    -- clock "rápido" (20 ns de período) → dentro da main vira 1 Hz pelo clock_1hz
-    clk_gen: process
-    begin
-        clock <= '0';
-        wait for 10 ns;
-        clock <= '1';
-        wait for 10 ns;
-    end process;
+    ---------------------------------------------------------------------
+    -- Instância da trava
+    ---------------------------------------------------------------------
+    trava_inst : entity work.trava(behavioral)
+        generic map (
+            senha              => 42,  -- exemplo de senha (decimal)
+            tempo_para_desarme => 30   -- tempo em segundos
+        )
+        port map (
+            clock    => clk_1hz,
+            reset    => SW(9),          -- SW9 = reset
+            input    => SW(7 downto 0), -- SW7..0 = entrada de senha
+            segundos => segundos_s,
+            trava    => trava_s
+        );
 
-    stim: process
-    begin
-        -- Aplica reset
-        reset <= '1';
-        input_s <= (others => '0');
-        wait for 40 ns;
+    ---------------------------------------------------------------------
+    -- Displays HEX3 e HEX2 mostrando o tempo restante em Hex
+    ---------------------------------------------------------------------
+    -- parte alta dos segundos
+    binto7seg_high : entity work.binto7seg(behavioral)
+        port map (
+            input   => segundos_s(7 downto 4),
+            display => HEX3
+        );
 
-        -- Tira reset -> começa contagem
-        reset <= '0';
-        wait for 200 ns;
-
-        -- Tenta senha errada
-        input_s <= std_logic_vector(to_unsigned(10, 8));
-        wait for 200 ns;
-
-        -- Tenta senha certa (64, de acordo com generic da trava na main)
-        input_s <= std_logic_vector(to_unsigned(64, 8));
-        wait for 300 ns;
-
-        -- Troca pra uma senha errada de novo
-        input_s <= std_logic_vector(to_unsigned(20, 8));
-        wait for 200 ns;
-
-        -- Fim da simulação
-        wait;
-    end process;
+    -- parte baixa dos segundos
+    binto7seg_low : entity work.binto7seg(behavioral)
+        port map (
+            input   => segundos_s(3 downto 0),
+            display => HEX2
+        );
 
 end architecture;
