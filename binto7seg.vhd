@@ -15,8 +15,8 @@ begin
         -- Aqui estou assumindo display de 7 segmentos common anode/cathode conforme
         -- seu professor usar; se inverter, basta complementar os bits.
         case input is
-            when "0000" => display <= "11000000"; -- 0
-            when "0001" => display <= "11111001"; -- 1
+            when "0000" => display <= "11000000"; -- 0  dp
+            when "0001" => display <= "11111001"; -- 1  6 5 4 3 2 1 0
             when "0010" => display <= "10100100"; -- 2
             when "0011" => display <= "10110000"; -- 3
             when "0100" => display <= "10011001"; -- 4
