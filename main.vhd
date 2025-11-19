@@ -24,7 +24,7 @@ architecture rtl of main is
 begin
 
     -- Divisor de clock (se seu clock já for 1 Hz, você pode ligar direto)
-    rego: entity work.clock_1hz(rtl)
+    rego: entity work.clk_div(rtl)
         port map (
             clock_in  => clock,
             clock_out => clock1
