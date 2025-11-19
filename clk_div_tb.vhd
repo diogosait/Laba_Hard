@@ -1,52 +1,34 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
-entity clk_div_tb is
-end entity clk_div_tb;
+entity tb_clock_1hz is
+end entity;
 
-architecture behavioral of clk_div_tb is
-    -- Constantes
-    constant CLOCK_50MHZ_PERIOD : time := 20 ns; -- Período do clock de 50 MHz (1/50MHz = 20ns)
-    constant TEST_DURATION : time := 5 sec; -- Duração total da simulação
+architecture sim of tb_clock_1hz is
 
-    -- Componente a ser testado
-    component clk_div
-        port (
-            clock_50mhz : in std_logic;
-            clock_1hz   : out std_logic
-        );
-    end component;
-
-    -- Sinais para o DUT
-    signal clock_50mhz_tb : std_logic := '0';
-    signal clock_1hz_tb   : std_logic;
+    signal clock_in  : std_logic := '0';
+    signal clock_out : std_logic;
 
 begin
-    -- Instanciação do DUT
-    uut: clk_div
+
+    -- DUT: clock_1hz
+    dut: entity work.clock_1hz(rtl)
+        generic map (
+            DIVISOR => 10   -- bem pequeno só pra simulação
+        )
         port map (
-            clock_50mhz => clock_50mhz_tb,
-            clock_1hz   => clock_1hz_tb
+            clock_in  => clock_in,
+            clock_out => clock_out
         );
 
-    -- Geração do clock de 50 MHz
-    clock_50mhz_gen: process
+    -- Geração do clock de entrada (período 10 ns)
+    clk_gen: process
     begin
-        loop
-            clock_50mhz_tb <= '0';
-            wait for CLOCK_50MHZ_PERIOD / 2;
-            clock_50mhz_tb <= '1';
-            wait for CLOCK_50MHZ_PERIOD / 2;
-        end loop;
+        clock_in <= '0';
+        wait for 5 ns;
+        clock_in <= '1';
+        wait for 5 ns;
     end process;
 
-    -- Processo de geração de estímulos
-    stim_proc: process
-    begin
-        -- Espera por um tempo suficiente para observar algumas bordas do clock de 1 Hz
-        wait for TEST_DURATION; 
-
-        wait; -- Fim da simulação
-    end process;
-
-end architecture behavioral;
+end architecture;
