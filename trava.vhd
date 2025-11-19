@@ -1,78 +1,76 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all; -- Para operações com unsigned/signed e conversão
+use ieee.numeric_std.all;
 
 entity trava is
     generic (
-        senha: natural range 0 to 255; -- Número usado como senha para destravar
-        tempo_para_desarme: natural range 0 to 255 -- Em segundos
+        senha              : natural range 0 to 255;
+        tempo_para_desarme : natural range 0 to 255
     );
     port (
-        clock: in std_logic; -- Entrada de clock 1hz para contagem do tempo
-        reset: in std_logic; -- Reset do tempo
-        input: in std_logic_vector(7 downto 0); -- Chaves para destravar
-        segundos: out std_logic_vector(7 downto 0); -- Tempo para desbloqueio
-        trava: out std_logic -- Sinal de led: '1' para travado, '0' para destravado
+        clock    : in  std_logic;                     -- clock de 1 Hz
+        reset    : in  std_logic;                     -- reset síncrono
+        input    : in  std_logic_vector(7 downto 0);  -- chaves (senha)
+        segundos : out std_logic_vector(7 downto 0);  -- tempo restante
+        trava1   : out std_logic                      -- 1 = travado, 0 = destravado
     );
-end entity trava;
+end entity;
 
-architecture behavioral of trava is
-    -- Sinal interno para o contador de tempo
-    signal contador_tempo : unsigned(7 downto 0) := (others => '0');
-    -- Sinal interno para o estado da trava
-    signal trava_s : std_logic := '1'; -- '1' = travado, '0' = destravado
-    -- Sinal interno para verificar se a senha foi acertada
-    signal senha_correta : boolean := false;
-
-    -- Constante para a senha em formato unsigned
-    constant SENHA_UNSIGNED : unsigned(7 downto 0) := to_unsigned(senha, 8);
-    -- Constante para o tempo de desarme em formato unsigned
-    constant TEMPO_DESARME_UNSIGNED : unsigned(7 downto 0) := to_unsigned(tempo_para_desarme, 8);
-
+architecture rtl of trava is
+    signal contador   : unsigned(7 downto 0) := (others => '0');
+    signal trava_reg  : std_logic := '1';
+    signal last_input : std_logic_vector(7 downto 0) := (others => '0');
 begin
-    -- Processo sequencial para o controle da trava e do contador de tempo
-    process(clock, reset)
-    begin
-        if reset = '1' then
-            -- Reset síncrono (ou assíncrono, dependendo da interpretação, mas o requisito é "Ao ter o sinal reset ligado (reset = 1)")
-            -- 1. O contador de tempo deve ser definido com tempo_para_desarme;
-            contador_tempo <= TEMPO_DESARME_UNSIGNED;
-            -- 2. O sinal de saída trava deve ser definido como 1 (bloqueado);
-            trava_s <= '1';
-            senha_correta <= false;
 
-        elsif rising_edge(clock) then
-            -- Ao ter o sinal reset desligado (reset = 0)
-            
-            -- 1. O contador de tempo deve decrementar 1 unidade por segundo até chegar em 0;
-            -- 2. O sinal de saída trava deve ser definido como 1 (bloqueado);
-            
-            -- Lógica de verificação da senha
-            if input = std_logic_vector(SENHA_UNSIGNED) then
-                -- Se input = senha:
-                -- 1. então sinal de saída trava deve ser definido como 0 (desbloqueado) e o contador de tempo deve parar de decrementar;
-                trava_s <= '0';
-                senha_correta <= true;
+    process(clock)
+        constant senha_bin : unsigned(7 downto 0) := to_unsigned(senha, 8);
+        variable input_changed : boolean;
+        variable new_trava     : std_logic;
+        variable new_contador  : unsigned(7 downto 0);
+    begin
+        if rising_edge(clock) then
+            -- valores default (começam com o atual)
+            new_trava    := trava_reg;
+            new_contador := contador;
+
+            -- detecta mudança de input
+            input_changed := (input /= last_input);
+
+            if reset = '1' then
+                -- reset geral
+                new_contador := to_unsigned(tempo_para_desarme, 8);
+                new_trava    := '1';      -- travado
             else
-                -- senão sinal de saída trava deve ser definido como 1 (bloqueado) e o contador de tempo deve voltar a decrementar;
-                trava_s <= '1';
-                senha_correta <= false;
+                if contador > 0 then
+                    -- houve mudança nas chaves?
+                    if input_changed then
+                        if unsigned(input) = senha_bin then
+                            -- senha correta: destrava e congela tempo
+                            new_trava := '0';
+                        else
+                            -- senha errada: trava e continua a contagem
+                            new_trava := '1';
+                        end if;
+                    end if;
+
+                    -- se ainda estiver travado, o tempo continua correndo
+                    if new_trava = '1' then
+                        new_contador := contador - 1;
+                    end if;
+                else
+                    -- tempo esgotado -> sempre travado
+                    new_trava := '1';
+                end if;
             end if;
-            
-            -- Lógica de decremento do contador
-            if senha_correta = false and contador_tempo > 0 then
-                contador_tempo <= contador_tempo - 1;
-            end if;
-            
-            -- Lógica de inicialização (Ao ser ligada: 1. A entidade deve ser automaticamente resetada;)
-            -- Isso é geralmente tratado por um power-on reset (POR) externo ou um valor inicial no sinal.
-            -- O reset='1' no início do processo já cobre o requisito de inicialização.
-            
+
+            -- atualiza registradores
+            trava_reg  <= new_trava;
+            contador   <= new_contador;
+            last_input <= input;
         end if;
     end process;
 
-    -- Saídas
-    trava <= trava_s;
-    segundos <= std_logic_vector(contador_tempo);
+    trava1   <= trava_reg;
+    segundos <= std_logic_vector(contador);
 
-end architecture behavioral;
+end architecture;
