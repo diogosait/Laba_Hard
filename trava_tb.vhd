@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_trava is
+entity trava_tb is
 end entity;
 
-architecture sim of tb_trava is
+architecture sim of trava_tb is
 
     signal clock    : std_logic := '0';
     signal reset    : std_logic := '0';
@@ -32,10 +32,14 @@ begin
     -- clock 1 Hz de mentirinha (período 20 ns só pra sim)
     clk_gen: process
     begin
-        clock <= '0';
-        wait for 10 ns;
-        clock <= '1';
-        wait for 10 ns;
+        for i in natural range 0 to 200 loop
+            clock <= '0';
+            wait for 10 ns;
+            clock <= '1';
+            wait for 10 ns;
+            
+        end loop;
+        wait;
     end process;
 
     stim: process
