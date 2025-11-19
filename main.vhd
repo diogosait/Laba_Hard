@@ -2,66 +2,67 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity main is    
-    port (
-        clock: in std_logic;                            -- clock (pode ser rápido, vai pro clock_1hz)
-        reset: in std_logic;
-        input: in std_logic_vector(7 downto 0);         -- chaves de "senha"
-        input_display: out std_logic_vector(7 downto 0);-- só espelha o input
-        trava1: out std_logic;                          -- 1 = travado, 0 = destravado
-        display1 : out std_logic_vector(7 downto 0);    -- 7 seg (parte baixa do tempo)
-        display2 : out std_logic_vector(7 downto 0)     -- 7 seg (parte alta do tempo)
-    );
+entity tb_main is
 end entity;
 
-architecture rtl of main is
+architecture sim of tb_main is
 
-    signal sec    : std_logic_vector(7 downto 0);
-    signal high_4 : std_logic_vector(3 downto 0);
-    signal low_4  : std_logic_vector(3 downto 0);
-    signal clock1 : std_logic;
+    signal clock         : std_logic := '0';
+    signal reset         : std_logic := '0';
+    signal input_s       : std_logic_vector(7 downto 0) := (others => '0');
+    signal input_display : std_logic_vector(7 downto 0);
+    signal trava1        : std_logic;
+    signal display1      : std_logic_vector(7 downto 0);
+    signal display2      : std_logic_vector(7 downto 0);
 
 begin
 
-    -- Divisor de clock (se seu clock já for 1 Hz, você pode ligar direto)
-    rego: entity work.clock_1hz(rtl)
+    -- DUT: main
+    dut: entity work.main(rtl)
         port map (
-            clock_in  => clock,
-            clock_out => clock1
+            clock         => clock,
+            reset         => reset,
+            input         => input_s,
+            input_display => input_display,
+            trava1        => trava1,
+            display1      => display1,
+            display2      => display2
         );
 
-    -- Módulo trava (senha = 64, tempo = 30 s, você pode trocar esses genéricos)
-    pix : entity work.trava(rtl)
-        generic map (
-            senha              => 64,
-            tempo_para_desarme => 30
-        )
-        port map (
-            clock    => clock1,
-            reset    => reset,
-            input    => input,
-            segundos => sec,
-            trava1   => trava1
-        );
+    -- clock "rápido" (20 ns de período) → dentro da main vira 1 Hz pelo clock_1hz
+    clk_gen: process
+    begin
+        clock <= '0';
+        wait for 10 ns;
+        clock <= '1';
+        wait for 10 ns;
+    end process;
 
-    -- separa nibble alto/baixo do contador de segundos
-    high_4 <= sec(7 downto 4);
-    low_4  <= sec(3 downto 0);
+    stim: process
+    begin
+        -- Aplica reset
+        reset <= '1';
+        input_s <= (others => '0');
+        wait for 40 ns;
 
-    -- displays de 7 seg (baixo e alto)
-    displayPIX1 : entity work.binto7seg(rtl)
-        port map (
-            input   => low_4,
-            display => display1
-        );
+        -- Tira reset -> começa contagem
+        reset <= '0';
+        wait for 200 ns;
 
-    displayPIX2 : entity work.binto7seg(rtl)
-        port map (
-            input   => high_4,
-            display => display2
-        );
+        -- Tenta senha errada
+        input_s <= std_logic_vector(to_unsigned(10, 8));
+        wait for 200 ns;
 
-    -- só para visualizar as chaves
-    input_display <= input;
+        -- Tenta senha certa (64, de acordo com generic da trava na main)
+        input_s <= std_logic_vector(to_unsigned(64, 8));
+        wait for 300 ns;
+
+        -- Troca pra uma senha errada de novo
+        input_s <= std_logic_vector(to_unsigned(20, 8));
+        wait for 200 ns;
+
+        -- Fim da simulação
+        wait;
+    end process;
 
 end architecture;
