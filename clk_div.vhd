@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity clk_div is
     generic (
-        DIVISOR : natural := 50_000_000  -- ajuste conforme o clock de entrada
+        DIVISOR : natural := 50_000_000
     );
     port (
         clock_in  : in  std_logic;
