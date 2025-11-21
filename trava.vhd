@@ -37,23 +37,21 @@ begin
             input_changed := (input /= last_input);
 
             if reset = '1' then
-                -- reset geral
                 new_contador := to_unsigned(tempo_para_desarme, 8);
                 new_trava    := '1';      -- travado
             else
                 if contador > 0 then
-                    -- houve mudança nas chaves?
+
                     if input_changed then
                         if unsigned(input) = senha_bin then
-                            -- senha correta: destrava e congela tempo
+                            -- senha correta
                             new_trava := '0';
                         else
-                            -- senha errada: trava e continua a contagem
+                            -- senha errada
                             new_trava := '1';
                         end if;
                     end if;
 
-                    -- se ainda estiver travado, o tempo continua correndo
                     if new_trava = '1' then
                         new_contador := contador - 1;
                     end if;
@@ -63,7 +61,6 @@ begin
                 end if;
             end if;
 
-            -- atualiza registradores
             trava_reg  <= new_trava;
             contador   <= new_contador;
             last_input <= input;
