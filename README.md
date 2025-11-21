@@ -1,6 +1,9 @@
 # Projeto de Fechadura Eletrônica em VHDL
 
 Este projeto implementa um modelo simplificado de fechadura eletrônica em VHDL, conforme especificado para o Trabalho Prático da disciplina de Laboratório de Hardware.
+##
+
+link do video da implementação https://www.youtube.com/shorts/bE7Q_snYwi0
 
 ## Estrutura do Projeto
 
