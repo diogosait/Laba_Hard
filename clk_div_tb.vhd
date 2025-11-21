@@ -12,10 +12,9 @@ architecture sim of clk_div_tb is
 
 begin
 
-    -- DUT: clk_div
     dut: entity work.clk_div(rtl)
         generic map (
-            DIVISOR => 10   -- bem pequeno só pra simulação
+            DIVISOR => 10  
         )
         port map (
             clock_in  => clock_in,
