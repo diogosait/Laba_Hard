@@ -23,14 +23,12 @@ architecture rtl of main is
 
 begin
 
-    -- Divisor de clock (se seu clock já for 1 Hz, você pode ligar direto)
     rego: entity work.clk_div(rtl)
         port map (
             clock_in  => clock,
             clock_out => clock1
         );
 
-    -- Módulo trava (senha = 64, tempo = 30 s, você pode trocar esses genéricos)
     pix : entity work.trava(rtl)
         generic map (
             senha              => 64,
@@ -44,11 +42,9 @@ begin
             trava1   => trava1
         );
 
-    -- separa nibble alto/baixo do contador de segundos
     high_4 <= sec(7 downto 4);
     low_4  <= sec(3 downto 0);
 
-    -- displays de 7 seg (baixo e alto)
     displayPIX1 : entity work.binto7seg(rtl)
         port map (
             input   => low_4,
@@ -61,7 +57,6 @@ begin
             display => display2
         );
 
-    -- só para visualizar as chaves
     input_display <= input;
 
 end architecture;
