@@ -12,7 +12,6 @@ architecture sim of binto7seg_tb is
 
 begin
 
-    -- DUT: binto7seg
     dut: entity work.binto7seg(rtl)
         port map (
             input   => input_s,
