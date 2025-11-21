@@ -3,8 +3,8 @@ use ieee.std_logic_1164.all;
 
 entity binto7seg is
     port (
-        input   : in  std_logic_vector(3 downto 0); -- nibble
-        display : out std_logic_vector(7 downto 0)  -- [7]=DP, [6..0]=abcdefg
+        input   : in  std_logic_vector(3 downto 0);
+        display : out std_logic_vector(7 downto 0) 
     );
 end entity;
 
@@ -12,11 +12,10 @@ architecture rtl of binto7seg is
 begin
     process(input)
     begin
-        -- Aqui estou assumindo display de 7 segmentos common anode/cathode conforme
-        -- seu professor usar; se inverter, basta complementar os bits.
+
         case input is
             when "0000" => display <= "11000000"; -- 0  dp
-            when "0001" => display <= "11111001"; -- 1  6 5 4 3 2 1 0
+            when "0001" => display <= "11111001"; -- 1  
             when "0010" => display <= "10100100"; -- 2
             when "0011" => display <= "10110000"; -- 3
             when "0100" => display <= "10011001"; -- 4
